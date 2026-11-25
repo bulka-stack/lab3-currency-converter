@@ -39,10 +39,12 @@ verify the amount and both rates against the known values.
    unit.
 3. **Given** the same currency is selected as source and target, including when no rate set is
    available, **When** the user converts, **Then** the result is the entered amount, both
-   displayed rates are 1, and no error is shown. If no rate set was used, the result explicitly
-   states that rate date and source are not applicable because no external rate was required.
+   displayed rates are 1, and no error is shown. The identity conversion MUST NOT request rates
+   or associate a rate set with the result. Show `Дата курса: не применимо` and
+   `Источник: внешний курс не запрашивался`.
 4. **Given** a valid conversion result, **When** the user swaps the source and target currencies,
-   **Then** the currencies and directional rates reverse and the result is recalculated.
+   **Then** the source and target selections exchange, the result and both directional rates are
+   recalculated from the same rate set, and the entered amount and requested date remain unchanged.
 5. **Given** a usable published rate set, **When** the user opens the currency choices, **Then**
    MDL and every currency with a usable rate are available.
 6. **Given** a conversion whose exact amount and rates have more fractional digits than the
@@ -68,29 +70,36 @@ application behavior in each case.
 1. **Given** no rates are published for the requested date, **When** the user requests a
    conversion, **Then** the application checks earlier dates one day at a time for at most 10
    calendar days, uses the nearest date with published rates if found, and clearly distinguishes
-   the requested date from the actual rate date.
-2. **Given** no usable rates are published within 10 calendar days before the requested date,
+   the requested date from the actual rate date. A valid `ValCurs` with no `Valute` entries is a
+   no-rates result and triggers this search.
+2. **Given** the source returns HTTP 404 with an empty body for the requested date, **When** the
+   user requests rates, **Then** the date is treated as having no rates and the application
+   searches earlier dates one day at a time, subject to the 10-day limit.
+3. **Given** the source returns any other HTTP error, including a non-empty 404 response, **When**
+   the user requests rates, **Then** the source is treated as unavailable, earlier-date searching
+   stops, and the saved-rate fallback is offered if usable saved rates exist.
+4. **Given** no usable rates are published within 10 calendar days before the requested date,
    **When** the user requests a conversion, **Then** the application stops searching and shows
    a short Russian message; it may offer a saved rate set according to the offline fallback
    behavior.
-3. **Given** the source cannot be reached and a previously received rate set is saved, **When**
+5. **Given** the source cannot be reached and a previously received rate set is saved, **When**
    the user requests a conversion, **Then** a short Russian message offers those saved rates and
    their date; if the user accepts, the result identifies that saved date and that saved data was
    used.
-4. **Given** the source cannot be reached and no usable rates are saved, **When** the user
+6. **Given** the source cannot be reached and no usable rates are saved, **When** the user
    requests a different-currency conversion, **Then** a short Russian error message is shown,
    no conversion result is produced, and the application remains open.
-5. **Given** valid rates have been received, **When** the application is closed and reopened,
+7. **Given** valid rates have been received, **When** the application is closed and reopened,
    **Then** those rates remain available as a fallback with their original date and source.
-6. **Given** no rates are found within the 10-day search window or source retrieval fails, and a
+8. **Given** no rates are found within the 10-day search window or source retrieval fails, and a
    saved usable rate set exists, **When** the user requests a conversion, **Then** the saved
    rates are offered with their date and are not replaced by unusable data.
-7. **Given** a request for rates is still pending, **When** the user interacts with the
+9. **Given** a request for rates is still pending, **When** the user interacts with the
    application, **Then** the application remains responsive and does not terminate.
-8. **Given** saved rate data is unreadable and the source is unavailable, **When** the user
+10. **Given** saved rate data is unreadable and the source is unavailable, **When** the user
    requests a different-currency conversion, **Then** a short Russian error message appears, no
    conversion is produced, and the application remains open.
-9. **Given** neither current nor saved rates are available, **When** the user opens the currency
+11. **Given** neither current nor saved rates are available, **When** the user opens the currency
    choices, **Then** MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY are listed, while
    the application clearly indicates that different-currency conversion requires available
    rates; same-currency identity conversion remains available.
@@ -131,6 +140,9 @@ invalid result.
 
 - The requested date is a weekend or public holiday with no published rate.
 - The source returns no rates, incomplete rates, or rates that cannot be used.
+- An empty-body HTTP 404 is a date miss; any other HTTP error makes the source unavailable.
+- A valid `ValCurs` with no `Valute` entries is a date miss; if entries exist but none is usable,
+  treat the response as unusable source data.
 - The source is unavailable while a saved rate set exists, or while none exists.
 - Saved rate data is damaged or cannot be read; the application remains open and reports the
   problem in a short Russian message.
@@ -150,26 +162,30 @@ invalid result.
 - **FR-002**: When rates are available, the currency choices MUST include MDL and currencies
   with usable rates in the National Bank of Moldova's official exchange-rate publication. When
   neither current nor saved rates are available, the choices MUST use the built-in set MDL,
-  USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY; users MUST still be told that conversion
-  is unavailable without rates.
+  USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY; users MUST still be told that
+  different-currency conversion is unavailable without rates.
 - **FR-003**: The application MUST calculate conversions using the published nominal quantity,
   so a rate quoted for multiple units is normalized correctly for the entered amount.
   Intermediate calculations MUST NOT be rounded.
 - **FR-004**: Each result using a rate set MUST show the converted amount, the selected pair's
   rate in both directions, the actual date of the rates used, and the National Bank of Moldova
-  as the source. An identity conversion without a rate set MUST explicitly state that rate date
-  and source are not applicable because no external rate was required. The displayed amount MUST
-  have 2 decimal places and each displayed rate MUST have 4 decimal places.
+  as the source. An identity conversion MUST NOT request or use a rate set and MUST show
+  `Дата курса: не применимо` and `Источник: внешний курс не запрашивался`. The displayed amount
+  MUST have 2 decimal places and each displayed rate MUST have 4 decimal places.
 - **FR-005**: When the actual rate date differs from the requested date, the application MUST
   identify both dates and explain that an earlier available rate was used.
 - **FR-006**: When a requested date has no published rates, the application MUST check earlier
   dates one calendar day at a time for up to 10 calendar days. It MUST use the nearest earlier
   date with usable published rates and tell the user that it did so; if none is found, it MUST
-  stop searching and show a short Russian message.
+  stop searching and show a short Russian message. A valid `ValCurs` with no `Valute` entries or
+  an HTTP 404 with an empty body for a validated date MUST count as no rates and trigger this
+  search.
 - **FR-007**: When source retrieval fails or no usable rates are found within the 10-day search
   window, the application MUST offer the last successfully received usable rates, including
-  their date and source. The user MUST be told when saved rates are used. A valid empty rate set
-  MUST trigger earlier-date searching before saved rates are offered.
+  their date and source. The user MUST be told when saved rates are used. A valid `ValCurs` with
+  no `Valute` entries or empty-body HTTP 404 MUST trigger earlier-date searching before saved
+  rates are offered. Any other HTTP error MUST be treated as source unavailable, MUST stop
+  earlier-date searching, and MUST proceed to the saved-rate fallback.
 - **FR-008**: The last successfully received usable rate set MUST be saved locally and remain
   available after the application is closed and reopened. Empty or unusable source data MUST
   NOT replace it.
@@ -181,9 +197,11 @@ invalid result.
 - **FR-011**: Convert MUST be disabled until the amount and both currency selections are
   non-empty. A touched amount field left empty MUST show a Russian validation message.
 - **FR-012**: Selecting the same source and target currency MUST be valid even when no rate set
-  is available, and MUST return the same amount with a rate of 1 in both directions.
-- **FR-013**: A swap control MUST exchange the selected source and target currencies and update
-  the conversion and both directional rates.
+  is available, MUST NOT request or use rates, and MUST return the same amount with a rate of 1
+  in both directions.
+- **FR-013**: A swap control MUST exchange the selected source and target currencies, keep the
+  entered amount and requested date unchanged, and recalculate the conversion and both
+  directional rates from the same rate set.
 - **FR-014**: Network activity MUST NOT make the application unresponsive.
 - **FR-015**: Network errors, empty or unusable source data, unreadable saved rates, and bad user
   input MUST NOT terminate the application. Each failure MUST be reported with a short message
@@ -230,9 +248,9 @@ invalid result.
 - **SC-009**: In 100% of tests with neither current nor saved rates, the 11 specified default
   currencies are available and the user is told that different-currency conversion is
   unavailable; same-currency identity conversion remains available.
-- **SC-010**: In 100% of same-currency test cases without a usable rate set, the entered amount
-  is returned, both rates are 1, and the result identifies that no external rate date or source
-  was required.
+- **SC-010**: In 100% of same-currency test cases, regardless of available rate data, the
+  entered amount is returned, both rates are 1, no rates are requested or used, and the result
+  shows `Дата курса: не применимо` and `Источник: внешний курс не запрашивался`.
 
 ## Assumptions
 
@@ -246,4 +264,5 @@ invalid result.
 - A saved rate set is offered for user approval rather than applied silently.
 - Positive amounts may use either a comma or a period as the decimal separator; thousands
   separators are not required.
-- If no usable saved rate set exists, an unavailable source means no conversion can be made.
+- If no usable saved rate set exists, an unavailable source means no different-currency
+  conversion can be made; same-currency identity conversion remains available.

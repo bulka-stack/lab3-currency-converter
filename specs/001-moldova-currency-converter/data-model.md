@@ -82,7 +82,8 @@ current or user-approved saved rates.
 When a usable rate set is available, choices are MDL and every currency with a usable quote in
 that set. If current and saved rates are both unavailable, show the built-in choices:
 MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY. Those fallback choices do not imply
-that conversion is possible without rate data.
+that different-currency conversion is possible without rate data; same-currency identity
+conversion remains available.
 
 ## Cache State and Service State
 

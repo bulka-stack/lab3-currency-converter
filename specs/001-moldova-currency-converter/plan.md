@@ -11,10 +11,13 @@ rates. Fetch the specified XML source with `urllib.request`, parse usable entrie
 rates, and convert using `Decimal` with nominal quantities applied. Keep the Tkinter event loop
 responsive by doing fetch and parsing work in a daemon worker and delivering results through a
 queue polled with `root.after`. Search backward by calendar day for at most 10 preceding days
-when a valid empty rate document is returned. Persist the last successful rate set in one JSON
-cache file using an atomic replacement. Keep core parsing, conversion, validation, caching, and
-fallback behavior independent of GUI imports; cover it with offline pytest tests and fixtures.
-An identical source/target pair is an identity conversion and does not require rate data.
+when a valid `ValCurs` with no `Valute` entries or an empty-body HTTP 404 is returned. Treat
+every other HTTP error or network/transport failure as source unavailable and do not continue
+the date search. Persist the last successful rate set in one JSON cache file using an atomic
+replacement. Keep core parsing, conversion, validation, caching, and fallback behavior
+independent of GUI imports; cover it with offline pytest tests and fixtures.
+An identical source/target pair is an identity conversion, never requests or uses a rate set,
+and shows explicit not-applicable date/source labels.
 
 The latest planning input also refines the spec's date boundary and no-cache currency list. The
 spec records an empty date field as today and accepts dates from 01.01.1994 through tomorrow.
@@ -47,14 +50,17 @@ separate requests, so no total completion-time guarantee is made for that sequen
 **Constraints**: Runtime uses only the standard library. Use a `daemon=True` worker, a
 thread-safe queue, and `root.after`; the worker MUST NOT access widgets and the Tkinter main
 thread owns all UI updates. Use the request's `DD.MM.YYYY` date, `User-Agent`, and timeout.
-Skip broken individual `Valute` entries; an empty valid `ValCurs` means no rates for that date,
-while an HTML document or other non-XML content is a source error. Cache only successful usable
-responses. Amount displays use two decimals, rates four decimals, and intermediate calculations
-are not rounded; use `ROUND_HALF_UP` only for display.
+Skip broken individual `Valute` entries. A valid `ValCurs` with no `Valute` entries or an
+empty-body HTTP 404 means no rates for that date and triggers earlier-date search; every other
+HTTP error or network/transport failure means source unavailable and stops date search. An HTML
+document or other non-XML content is a source error.
+Cache only successful usable responses. Amount displays use two decimals, rates four decimals,
+and intermediate calculations are not rounded; use `ROUND_HALF_UP` only for display.
 
 **Scale/Scope**: One local user and one cached rate set. Currency options are the available
 published currencies plus MDL, or the specified 11-currency default when neither current nor
-saved rates are available. Date fallback checks up to 10 preceding calendar days.
+saved rates are available; the default list does not enable cross-currency conversion. Date
+fallback checks up to 10 preceding calendar days.
 
 ## Constitution Check
 
@@ -94,6 +100,13 @@ specs/001-moldova-currency-converter/
 ├── checklists/
 │   └── requirements.md
 └── tasks.md              # Created by /speckit-tasks
+```
+
+### Repository Documentation
+
+```text
+README.md
+REPORT.md                 # Created after implementation and offline tests are verified
 ```
 
 ### Source Code (repository root)
