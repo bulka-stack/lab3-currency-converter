@@ -49,8 +49,8 @@ applies.
 - A corrupt or unreadable cache is treated as missing, reported with a short Russian message,
   and does not terminate the application.
 - When neither current nor saved rates are available, show the built-in currency choices
-  (MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, CNY); a conversion request still reports
-  that rates are unavailable.
+  (MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, CNY); a different-currency request still
+  reports that rates are unavailable. A same-currency identity request remains available.
 
 ## State and Thread Ownership
 

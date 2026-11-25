@@ -150,8 +150,8 @@ invalid result.
 - **FR-002**: When rates are available, the currency choices MUST include MDL and currencies
   with usable rates in the National Bank of Moldova's official exchange-rate publication. When
   neither current nor saved rates are available, the choices MUST use the built-in set MDL,
-  USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY; users MUST still be told that conversion
-  is unavailable without rates.
+  USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY; users MUST still be told that
+  different-currency conversion is unavailable without rates.
 - **FR-003**: The application MUST calculate conversions using the published nominal quantity,
   so a rate quoted for multiple units is normalized correctly for the entered amount.
   Intermediate calculations MUST NOT be rounded.
@@ -246,4 +246,5 @@ invalid result.
 - A saved rate set is offered for user approval rather than applied silently.
 - Positive amounts may use either a comma or a period as the decimal separator; thousands
   separators are not required.
-- If no usable saved rate set exists, an unavailable source means no conversion can be made.
+- If no usable saved rate set exists, an unavailable source means no different-currency
+  conversion can be made; same-currency identity conversion remains available.

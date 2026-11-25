@@ -54,7 +54,8 @@ are not rounded; use `ROUND_HALF_UP` only for display.
 
 **Scale/Scope**: One local user and one cached rate set. Currency options are the available
 published currencies plus MDL, or the specified 11-currency default when neither current nor
-saved rates are available. Date fallback checks up to 10 preceding calendar days.
+saved rates are available; the default list does not enable cross-currency conversion. Date
+fallback checks up to 10 preceding calendar days.
 
 ## Constitution Check
 
