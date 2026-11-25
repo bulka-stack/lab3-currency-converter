@@ -41,9 +41,9 @@ Every task follows `- [ ] T### [P?] [Story?] Description with exact file path`.
 **Purpose**: Require approved specifications before code work and establish the implementation
 branch and package skeleton.
 
-- [ ] T001 Verify that `specs/001-moldova-currency-converter/spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, and `tasks.md` are merged to `main` through a Pull Request; do not start source or test code before this gate.
-- [ ] T002 After T001, create the implementation-stage branch `implementation/001-moldova-currency-converter` from the updated `main` before editing `currency_converter/__init__.py` or `main.py`.
-- [ ] T003 After T002, create the application package marker in `currency_converter/__init__.py` and the desktop entry point in `main.py` using only the Python standard library.
+- [x] T001 Verify that `specs/001-moldova-currency-converter/spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, and `tasks.md` are merged to `main` through a Pull Request; do not start source or test code before this gate.
+- [x] T002 After T001, create the implementation-stage branch `implementation/001-moldova-currency-converter` from the updated `main` before editing `currency_converter/__init__.py` or `main.py`.
+- [x] T003 After T002, create the application package marker in `currency_converter/__init__.py` and the desktop entry point in `main.py` using only the Python standard library.
 
 ---
 
@@ -54,7 +54,7 @@ and GUI layers.
 
 **Blocking**: Complete this phase before starting any user-story implementation.
 
-- [ ] T004 Define the shared records in `currency_converter/models.py`: a quote has a unique alphabetic `code`, text `numeric_code` preserving leading zeroes, source `name`, and positive `Decimal` `nominal` and `value_mdl`; a rate set contains one actual date and its usable quotes; a request amount is a positive `Decimal`; and a conversion result may have no rate set for the no-rate identity case.
+- [x] T004 Define the shared records in `currency_converter/models.py`: a quote has a unique alphabetic `code`, text `numeric_code` preserving leading zeroes, source `name`, and positive `Decimal` `nominal` and `value_mdl`; a rate set contains one actual date and its usable quotes; a request amount is a positive `Decimal`; and a conversion result may have no rate set for the no-rate identity case.
 
 **Checkpoint**: Shared data shapes and constraints are ready; user-story code can begin.
 
@@ -72,11 +72,11 @@ when no rate set is used, and that Swap recalculates both directions from the sa
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] Implement the NBM request and XML parser in `currency_converter/bnm.py` for `https://www.bnm.md/en/official_exchange_rates?get_xml=1&date=DD.MM.YYYY`, with a descriptive `User-Agent` and 10-second timeout; parse `ValCurs`/`Valute`, preserve `NumCode` as text, skip broken entries, treat a valid `ValCurs` with no `Valute` entries and empty-body HTTP 404 as date misses, and classify any other HTTP error, network/transport error, HTML/malformed XML, or a response with entries but no usable quotes as source errors.
-- [ ] T006 [P] [US1] Implement MDL-normalized conversion and display formatting in `currency_converter/conversion.py`: normalize `Value / Nominal`, calculate cross rates through MDL, preserve full intermediate precision, display amounts to 2 decimals and rates to 4 using `ROUND_HALF_UP`, and return amount unchanged with rates of 1 for an identity pair.
-- [ ] T007 [US1] Implement the requested-date rate service in `currency_converter/service.py`, combining `currency_converter/bnm.py` and `currency_converter/conversion.py`; return typed success/failure outcomes and bypass rate retrieval and rate-set association for every identity conversion.
-- [ ] T008 [P] [US1] Build the main form and result area in `currency_converter/gui.py` with amount, source/target currencies, `DD.MM.YYYY` rate date, Convert, Swap, converted amount, both rates, actual rate date, and NBM source; keep Convert disabled until amount and both currency selections are non-empty. For every identity result, show `Дата курса: не применимо` and `Источник: внешний курс не запрашивался`; make Swap exchange currencies, preserve amount/date, and recalculate result and both rates from the same rate set.
-- [ ] T009 [US1] Connect `currency_converter/gui.py` to `currency_converter/service.py` and start the application from `main.py` using `threading.Thread(daemon=True)`, `queue.Queue`, and `root.after`; keep all widget access on the Tk thread, disable request-changing controls while busy, keep the window responsive, and show source failures in short Russian messages.
+- [x] T005 [P] [US1] Implement the NBM request and XML parser in `currency_converter/bnm.py` for `https://www.bnm.md/en/official_exchange_rates?get_xml=1&date=DD.MM.YYYY`, with a descriptive `User-Agent` and 10-second timeout; parse `ValCurs`/`Valute`, preserve `NumCode` as text, skip broken entries, treat a valid `ValCurs` with no `Valute` entries and empty-body HTTP 404 as date misses, and classify any other HTTP error, network/transport error, HTML/malformed XML, or a response with entries but no usable quotes as source errors.
+- [x] T006 [P] [US1] Implement MDL-normalized conversion and display formatting in `currency_converter/conversion.py`: normalize `Value / Nominal`, calculate cross rates through MDL, preserve full intermediate precision, display amounts to 2 decimals and rates to 4 using `ROUND_HALF_UP`, and return amount unchanged with rates of 1 for an identity pair.
+- [x] T007 [US1] Implement the requested-date rate service in `currency_converter/service.py`, combining `currency_converter/bnm.py` and `currency_converter/conversion.py`; return typed success/failure outcomes and bypass rate retrieval and rate-set association for every identity conversion.
+- [x] T008 [P] [US1] Build the main form and result area in `currency_converter/gui.py` with amount, source/target currencies, `DD.MM.YYYY` rate date, Convert, Swap, converted amount, both rates, actual rate date, and NBM source; keep Convert disabled until amount and both currency selections are non-empty. For every identity result, show `Дата курса: не применимо` and `Источник: внешний курс не запрашивался`; make Swap exchange currencies, preserve amount/date, and recalculate result and both rates from the same rate set.
+- [x] T009 [US1] Connect `currency_converter/gui.py` to `currency_converter/service.py` and start the application from `main.py` using `threading.Thread(daemon=True)`, `queue.Queue`, and `root.after`; keep all widget access on the Tk thread, disable request-changing controls while busy, keep the window responsive, and show source failures in short Russian messages.
 
 **Checkpoint**: The GUI can convert a valid currency pair, swap directions, and complete an
 identity conversion without requiring rate data.
@@ -95,9 +95,9 @@ access.
 
 ### Implementation for User Story 2
 
-- [ ] T010 [P] [US2] Implement JSON cache load/save in `currency_converter/cache.py` at `%APPDATA%\CurrencyConverterBNM\rates.json`, storing only one successful date's complete usable rate set and UTC fetch time; write a same-directory temporary file and replace with `os.replace`, treat corrupt data as missing, and never replace good cache data with empty or unusable rates.
-- [ ] T011 [US2] Extend `currency_converter/service.py` to try the requested date, then each preceding date one day at a time for at most 10 preceding days; a valid `ValCurs` with no `Valute` entries and empty-body HTTP 404 are date misses, while any other HTTP or network/transport error stops date searching as source unavailable. Update cache only for usable results and offer saved rates after source failure or exhausted search.
-- [ ] T012 [US2] Add fallback states to `currency_converter/gui.py`: ask before using saved rates and show their rate date/source, distinguish requested and actual dates, label cached/earlier rates, display short Russian failure messages, and show MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY when neither current nor saved rates are available.
+- [x] T010 [P] [US2] Implement JSON cache load/save in `currency_converter/cache.py` at `%APPDATA%\CurrencyConverterBNM\rates.json`, storing only one successful date's complete usable rate set and UTC fetch time; write a same-directory temporary file and replace with `os.replace`, treat corrupt data as missing, and never replace good cache data with empty or unusable rates.
+- [x] T011 [US2] Extend `currency_converter/service.py` to try the requested date, then each preceding date one day at a time for at most 10 preceding days; a valid `ValCurs` with no `Valute` entries and empty-body HTTP 404 are date misses, while any other HTTP or network/transport error stops date searching as source unavailable. Update cache only for usable results and offer saved rates after source failure or exhausted search.
+- [x] T012 [US2] Add fallback states to `currency_converter/gui.py`: ask before using saved rates and show their rate date/source, distinguish requested and actual dates, label cached/earlier rates, display short Russian failure messages, and show MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY when neither current nor saved rates are available.
 
 **Checkpoint**: Date fallback stops at the specified limit; approved cache use is explicit and
 persists across restarts; absent rates never crash the application.
@@ -115,8 +115,8 @@ messages, today's-date default, and absence of invalid conversions.
 
 ### Implementation for User Story 3
 
-- [ ] T013 [P] [US3] Implement pure input parsing and validation in `currency_converter/validation.py`: amount must be a positive `Decimal`, accept comma or period as the decimal separator, reject thousands separators, parse dates as `DD.MM.YYYY`, map blank date to local today, and accept only 01.01.1994 through tomorrow.
-- [ ] T014 [US3] Integrate `currency_converter/validation.py` with `currency_converter/gui.py` so touched-empty, non-numeric, zero, negative, malformed, too-early, and too-late inputs show short Russian messages, invalid requests produce no result, and valid form state enables Convert.
+- [x] T013 [P] [US3] Implement pure input parsing and validation in `currency_converter/validation.py`: amount must be a positive `Decimal`, accept comma or period as the decimal separator, reject thousands separators, parse dates as `DD.MM.YYYY`, map blank date to local today, and accept only 01.01.1994 through tomorrow.
+- [x] T014 [US3] Integrate `currency_converter/validation.py` with `currency_converter/gui.py` so touched-empty, non-numeric, zero, negative, malformed, too-early, and too-late inputs show short Russian messages, invalid requests produce no result, and valid form state enables Convert.
 
 **Checkpoint**: All three stories are implemented; valid requests work and invalid input cannot
 produce a conversion.
