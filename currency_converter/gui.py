@@ -7,7 +7,7 @@ import threading
 import tkinter as tk
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 from currency_converter.conversion import format_amount, format_rate
 from currency_converter.models import (
@@ -66,7 +66,7 @@ class CurrencyConverterApp:
         self.source_combo = ttk.Combobox(
             container,
             textvariable=self.source_var,
-            values=DEFAULT_CURRENCY_CHOICES,
+            values=list(DEFAULT_CURRENCY_CHOICES),
             state="readonly",
             width=25,
         )
@@ -76,7 +76,7 @@ class CurrencyConverterApp:
         self.target_combo = ttk.Combobox(
             container,
             textvariable=self.target_var,
-            values=DEFAULT_CURRENCY_CHOICES,
+            values=list(DEFAULT_CURRENCY_CHOICES),
             state="readonly",
             width=25,
         )
@@ -141,12 +141,11 @@ class CurrencyConverterApp:
         )
 
     def _bind_state_traces(self) -> None:
-        """Keep the Convert button state synchronized with required inputs."""
+        """Keep the Convert button state synchronised with required inputs."""
         for var in (self.amount_var, self.source_var, self.target_var):
             var.trace_add("write", lambda *_args: self._update_convert_button_state())
 
     def _has_required_fields(self) -> bool:
-        """Return True when amount and both currency selections are non-empty."""
         return bool(
             self.amount_var.get().strip()
             and self.source_var.get().strip()
@@ -154,19 +153,16 @@ class CurrencyConverterApp:
         )
 
     def _update_convert_button_state(self) -> None:
-        """Enable Convert only when not busy and required inputs are non-empty."""
         if self._is_busy or not self._has_required_fields():
             self.convert_button.configure(state="disabled")
         else:
             self.convert_button.configure(state="normal")
 
     def _set_busy(self, busy: bool) -> None:
-        """Toggle request-changing controls while a background fetch is active."""
         self._is_busy = busy
         entry_state = "disabled" if busy else "normal"
         combo_state = "disabled" if busy else "readonly"
         swap_state = "disabled" if busy else "normal"
-
         self.amount_entry.configure(state=entry_state)
         self.date_entry.configure(state=entry_state)
         self.source_combo.configure(state=combo_state)
@@ -175,7 +171,6 @@ class CurrencyConverterApp:
         self._update_convert_button_state()
 
     def _clear_result(self) -> None:
-        """Reset result labels so no stale or invalid conversion is displayed."""
         self._last_result = None
         self.result_amount_var.set("Результат: —")
         self.forward_rate_var.set("Прямой курс: —")
@@ -183,8 +178,19 @@ class CurrencyConverterApp:
         self.rate_date_var.set("Дата курса: —")
         self.rate_source_var.set("Источник: —")
 
+    def _set_currency_choices(self, currencies: tuple[str, ...] | None) -> None:
+        """Update combobox values to reflect the available currency set."""
+        choices = list(currencies) if currencies else list(DEFAULT_CURRENCY_CHOICES)
+        current_source = self.source_var.get()
+        current_target = self.target_var.get()
+        self.source_combo.configure(values=choices)
+        self.target_combo.configure(values=choices)
+        if current_source not in choices:
+            self.source_var.set("")
+        if current_target not in choices:
+            self.target_var.set("")
+
     def _build_request(self) -> ConversionRequest | None:
-        """Parse form values into an immutable ConversionRequest or report an error."""
         raw_amount = self.amount_var.get().strip()
         if not raw_amount:
             self._clear_result()
@@ -246,12 +252,10 @@ class CurrencyConverterApp:
         self._outcome_queue.put((req_id, outcome))
 
     def _schedule_poll(self) -> None:
-        """Schedule the next non-blocking queue poll on the Tkinter event loop."""
         if not self._closing and self._after_id is None:
             self._after_id = self.root.after(POLL_INTERVAL_MS, self._poll_queue)
 
     def _poll_queue(self) -> None:
-        """Consume completed worker outcomes on the Tkinter main thread."""
         self._after_id = None
         if self._closing:
             return
@@ -263,54 +267,122 @@ class CurrencyConverterApp:
                 break
             if req_id == self._request_seq:
                 self._set_busy(False)
-                self._apply_service_outcome(outcome, self.source_var.get(), self.target_var.get())
+                self._handle_outcome(outcome)
 
         if self._is_busy and not self._closing:
             self._schedule_poll()
 
-    def _apply_service_outcome(
-        self,
-        outcome: ServiceOutcome,
-        source_currency: str,
-        target_currency: str,
-    ) -> None:
-        """Apply a ServiceOutcome to the UI widgets on the main thread."""
+    def _handle_outcome(self, outcome: ServiceOutcome) -> None:
+        """Route a ServiceOutcome to the appropriate UI response on the main thread."""
+        # Always update currency list when provided
         if outcome.available_currencies is not None:
-            self.source_combo.configure(values=outcome.available_currencies)
-            self.target_combo.configure(values=outcome.available_currencies)
+            self._set_currency_choices(outcome.available_currencies)
 
-        if outcome.status == ServiceStatus.SUCCESS and outcome.result is not None:
-            result = outcome.result
-            self._last_result = result
-            self.status_var.set("")
-
-            amount_text = format_amount(result.amount_exact)
-            forward_text = format_rate(result.source_to_target_rate_exact)
-            reverse_text = format_rate(result.target_to_source_rate_exact)
-
-            self.result_amount_var.set(f"Результат: {amount_text} {target_currency}")
-            self.forward_rate_var.set(
-                f"Прямой курс: 1 {source_currency} = {forward_text} {target_currency}"
-            )
-            self.reverse_rate_var.set(
-                f"Обратный курс: 1 {target_currency} = {reverse_text} {source_currency}"
-            )
-
-            if result.rate_set is None:
-                self.rate_date_var.set("Дата курса: не применимо")
-                self.rate_source_var.set("Источник: внешний курс не запрашивался")
-            else:
-                self.rate_date_var.set(
-                    f"Дата курса: {result.rate_set.rate_date.strftime('%d.%m.%Y')}"
-                )
-                self.rate_source_var.set(f"Источник: {result.rate_set.source}")
+        if outcome.status == ServiceStatus.OFFER_CACHED:
+            self._handle_offer_cached(outcome)
             return
 
+        if outcome.status == ServiceStatus.SUCCESS:
+            self._apply_success_result(outcome)
+            return
+
+        # FAILURE
         self._clear_result()
         self.status_var.set(outcome.error_message or "Не удалось выполнить конвертацию.")
 
+    def _handle_offer_cached(self, outcome: ServiceOutcome) -> None:
+        """Ask the user whether to use the saved rate set; apply or discard accordingly."""
+        saved_set = outcome.cached_rate_set
+        if saved_set is None:
+            self._clear_result()
+            self.status_var.set("Сохранённые курсы недоступны.")
+            return
+
+        # Build a human-readable offer prompt
+        date_str = saved_set.rate_date.strftime("%d.%m.%Y")
+        prompt = (
+            f"Курсы НБМ за запрошенный период недоступны.\n\n"
+            f"Доступны сохранённые курсы от {date_str}.\n"
+            f"Использовать их для конвертации?"
+        )
+        use_saved = messagebox.askyesno(
+            title="Использовать сохранённые курсы?",
+            message=prompt,
+            parent=self.root,
+        )
+
+        if not use_saved:
+            self._clear_result()
+            self.status_var.set(
+                f"Конвертация не выполнена. Сохранённые курсы от {date_str} не были использованы."
+            )
+            return
+
+        request = self._build_request()
+        if request is None:
+            return
+
+        result_outcome = self._service.convert_with_rate_set(
+            request,
+            saved_set,
+            used_cached_rates=True,
+        )
+        if result_outcome.available_currencies is not None:
+            self._set_currency_choices(result_outcome.available_currencies)
+        self._apply_success_result(result_outcome)
+
+    def _apply_success_result(self, outcome: ServiceOutcome) -> None:
+        """Display a successful conversion result in the result area."""
+        if outcome.result is None:
+            self._clear_result()
+            self.status_var.set(outcome.error_message or "Не удалось выполнить конвертацию.")
+            return
+
+        result = outcome.result
+        self._last_result = result
+
+        source_currency = self.source_var.get()
+        target_currency = self.target_var.get()
+
+        amount_text = format_amount(result.amount_exact)
+        forward_text = format_rate(result.source_to_target_rate_exact)
+        reverse_text = format_rate(result.target_to_source_rate_exact)
+
+        self.result_amount_var.set(f"Результат: {amount_text} {target_currency}")
+        self.forward_rate_var.set(
+            f"Прямой курс: 1 {source_currency} = {forward_text} {target_currency}"
+        )
+        self.reverse_rate_var.set(
+            f"Обратный курс: 1 {target_currency} = {reverse_text} {source_currency}"
+        )
+
+        if result.rate_set is None:
+            # Identity conversion
+            self.rate_date_var.set("Дата курса: не применимо")
+            self.rate_source_var.set("Источник: внешний курс не запрашивался")
+            self.status_var.set("")
+            return
+
+        actual_date_str = result.rate_set.rate_date.strftime("%d.%m.%Y")
+        requested_date_str = result.requested_date.strftime("%d.%m.%Y")
+
+        # Build status note about rate freshness
+        status_parts: list[str] = []
+        if result.used_cached_rates:
+            status_parts.append(
+                f"Использованы сохранённые курсы от {actual_date_str}."
+            )
+        elif result.used_earlier_date:
+            status_parts.append(
+                f"За {requested_date_str} курсы не опубликованы. "
+                f"Использованы курсы от {actual_date_str}."
+            )
+        self.status_var.set(" ".join(status_parts))
+
+        self.rate_date_var.set(f"Дата курса: {actual_date_str}")
+        self.rate_source_var.set(f"Источник: {result.rate_set.source}")
+
     def on_convert(self) -> None:
-        """Validate input and start conversion (synchronously for identity, async otherwise)."""
         if self._is_busy:
             return
 
@@ -320,14 +392,11 @@ class CurrencyConverterApp:
 
         if request.source_currency == request.target_currency:
             outcome = self._service.convert(request)
-            self._apply_service_outcome(
-                outcome,
-                request.source_currency,
-                request.target_currency,
-            )
+            self._handle_outcome(outcome)
             return
 
         self.status_var.set("Загрузка курсов НБМ...")
+        self._clear_result()
         self._set_busy(True)
         self._request_seq += 1
         req_id = self._request_seq
@@ -341,7 +410,6 @@ class CurrencyConverterApp:
         self._schedule_poll()
 
     def on_swap(self) -> None:
-        """Exchange source and target currencies and recalculate from the same rate set."""
         if self._is_busy:
             return
 
@@ -361,11 +429,7 @@ class CurrencyConverterApp:
 
         if request.source_currency == request.target_currency:
             outcome = self._service.convert_with_rate_set(request, None)
-            self._apply_service_outcome(
-                outcome,
-                request.source_currency,
-                request.target_currency,
-            )
+            self._handle_outcome(outcome)
             return
 
         if previous_result.rate_set is None:
@@ -377,14 +441,9 @@ class CurrencyConverterApp:
             previous_result.rate_set,
             used_cached_rates=previous_result.used_cached_rates,
         )
-        self._apply_service_outcome(
-            outcome,
-            request.source_currency,
-            request.target_currency,
-        )
+        self._handle_outcome(outcome)
 
     def on_close(self) -> None:
-        """Cancel UI polling and close the window without waiting on daemon workers."""
         self._closing = True
         if self._after_id is not None:
             self.root.after_cancel(self._after_id)

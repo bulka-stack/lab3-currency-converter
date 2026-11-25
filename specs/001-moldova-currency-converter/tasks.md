@@ -95,9 +95,9 @@ access.
 
 ### Implementation for User Story 2
 
-- [ ] T010 [P] [US2] Implement JSON cache load/save in `currency_converter/cache.py` at `%APPDATA%\CurrencyConverterBNM\rates.json`, storing only one successful date's complete usable rate set and UTC fetch time; write a same-directory temporary file and replace with `os.replace`, treat corrupt data as missing, and never replace good cache data with empty or unusable rates.
-- [ ] T011 [US2] Extend `currency_converter/service.py` to try the requested date, then each preceding date one day at a time for at most 10 preceding days; a valid `ValCurs` with no `Valute` entries and empty-body HTTP 404 are date misses, while any other HTTP or network/transport error stops date searching as source unavailable. Update cache only for usable results and offer saved rates after source failure or exhausted search.
-- [ ] T012 [US2] Add fallback states to `currency_converter/gui.py`: ask before using saved rates and show their rate date/source, distinguish requested and actual dates, label cached/earlier rates, display short Russian failure messages, and show MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY when neither current nor saved rates are available.
+- [x] T010 [P] [US2] Implement JSON cache load/save in `currency_converter/cache.py` at `%APPDATA%\CurrencyConverterBNM\rates.json`, storing only one successful date's complete usable rate set and UTC fetch time; write a same-directory temporary file and replace with `os.replace`, treat corrupt data as missing, and never replace good cache data with empty or unusable rates.
+- [x] T011 [US2] Extend `currency_converter/service.py` to try the requested date, then each preceding date one day at a time for at most 10 preceding days; a valid `ValCurs` with no `Valute` entries and empty-body HTTP 404 are date misses, while any other HTTP or network/transport error stops date searching as source unavailable. Update cache only for usable results and offer saved rates after source failure or exhausted search.
+- [x] T012 [US2] Add fallback states to `currency_converter/gui.py`: ask before using saved rates and show their rate date/source, distinguish requested and actual dates, label cached/earlier rates, display short Russian failure messages, and show MDL, USD, EUR, RUB, RON, UAH, GBP, CHF, TRY, JPY, and CNY when neither current nor saved rates are available.
 
 **Checkpoint**: Date fallback stops at the specified limit; approved cache use is explicit and
 persists across restarts; absent rates never crash the application.
