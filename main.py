@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from currency_converter.gui import run_app
+
 
 def main() -> None:
     """Launch the desktop application."""
-    raise NotImplementedError("GUI entry point will be wired in Phase 3 (T009).")
+    run_app()
 
 
 if __name__ == "__main__":
