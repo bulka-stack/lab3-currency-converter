@@ -1,50 +1,66 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+Version change: unversioned scaffold -> 1.0.0
+Modified principles:
+- PRINCIPLE_1_NAME -> I. Specification-First Development
+- PRINCIPLE_2_NAME -> II. Resilient User Experience (NON-NEGOTIABLE)
+- PRINCIPLE_3_NAME -> III. Testable Core
+- PRINCIPLE_4_NAME -> IV. Minimal Runtime Dependencies
+- PRINCIPLE_5_NAME -> V. Transparent Currency Data
+Added sections: Platform and Technical Constraints; Development Workflow
+Removed sections: None
+Follow-up TODO: Confirm the original ratification date.
+-->
+# Moldova Currency Converter Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Specification-First Development
+Every change MUST follow the sequence spec -> plan -> tasks -> implementation. Specification
+commits MUST precede implementation commits. This keeps implementation aligned with reviewed
+requirements.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Resilient User Experience (NON-NEGOTIABLE)
+The desktop application MUST NOT terminate because of network errors, empty or invalid source
+responses, broken cache files, or invalid user input. Each failure MUST be reported with a short
+message in Russian. Network calls MUST NOT freeze the user interface.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Testable Core
+Parsing, conversion, validation, caching, and fallback logic MUST reside in modules that do not
+import GUI code. These modules MUST have pytest unit tests that run offline with one command.
+Tests MUST use fixtures and fakes and MUST NOT access the real network.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Minimal Runtime Dependencies
+Runtime dependencies MUST be limited to the Python standard library. The supported runtime MUST
+use Python 3.11 or newer; pytest is permitted for development and testing only. Monetary values
+and calculations MUST use decimal.Decimal, never float.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Transparent Currency Data
+Every conversion result MUST display its rate date and data source. If the application uses a
+rate from a different date or from cache, it MUST state that explicitly so users can assess the
+freshness and origin of the result.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Platform and Technical Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+The application MUST be a desktop GUI for currency conversion in Moldova; a console UI is not
+acceptable. The GUI MUST use Tkinter/ttk. Runtime functionality MUST use only the standard
+library, including tkinter, urllib, xml.etree, json, and decimal as needed.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Each stage (specification, plan, tasks, and implementation) MUST use a separate Git branch.
+Changes MUST be merged to the main branch only through a Pull Request.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution governs project decisions and implementation. Amendments MUST be documented
+and reviewed before implementation; project changes MUST continue to follow the
+specification-first sequence above. The constitution version MUST follow semantic versioning:
+MAJOR for incompatible changes to principles or governance, MINOR for new principles or
+materially expanded requirements, and PATCH for clarifications that do not change requirements.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Every implementation Pull Request MUST be reviewed for compliance with this constitution and
+include relevant offline test results. Non-compliant changes MUST be revised or explicitly
+addressed through a constitution amendment before merge.
+
+**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2026-11-25
