@@ -8,6 +8,14 @@
 
 **Input**: User description: "A desktop currency converter for Moldova using the National Bank of Moldova's official exchange rates, with dated rates, conversion in both directions, input validation, offline fallback, and saved rates."
 
+## Clarifications
+
+### Session 2026-11-25
+
+- Q: How should the converted amount be rounded for display? → A: Display converted amounts to
+  2 decimal places, exchange rates to 4 decimal places, and do not round intermediate
+  calculations.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Convert currencies (Priority: P1)
@@ -35,6 +43,9 @@ verify the amount and both rates against the known values.
    **Then** the currencies and directional rates reverse and the result is recalculated.
 5. **Given** a usable published rate set, **When** the user opens the currency choices, **Then**
    MDL and every currency with a usable rate are available.
+6. **Given** a conversion whose exact amount and rates have more fractional digits than the
+   display allows, **When** the result is shown, **Then** the amount has 2 decimal places, each
+   directional rate has 4 decimal places, and intermediate calculations have not been rounded.
 
 ---
 
@@ -127,8 +138,11 @@ invalid result.
   National Bank of Moldova's official exchange-rate publication.
 - **FR-003**: The application MUST calculate conversions using the published nominal quantity,
   so a rate quoted for multiple units is normalized correctly for the entered amount.
+  Intermediate calculations MUST NOT be rounded.
 - **FR-004**: Each result MUST show the converted amount, the selected pair's rate in both
   directions, the actual date of the rates used, and the National Bank of Moldova as the source.
+  The displayed amount MUST have 2 decimal places and each displayed rate MUST have 4 decimal
+  places.
 - **FR-005**: When the actual rate date differs from the requested date, the application MUST
   identify both dates and explain that an earlier available rate was used.
 - **FR-006**: When a requested date has no published rates, the application MUST use the most
@@ -171,10 +185,10 @@ invalid result.
 ### Measurable Outcomes
 
 - **SC-001**: In 100% of valid conversion test cases, the displayed result agrees with the
-  expected value for the selected currencies and published rates, including rates quoted per
-  nominal quantities.
+  expected value rounded to 2 decimal places for the selected currencies and published rates,
+  including rates quoted per nominal quantities.
 - **SC-002**: In 100% of conversion results, users can identify the source, actual rate date,
-  and both directional rates.
+  and both directional rates, displayed to 4 decimal places.
 - **SC-003**: In 100% of test cases where the requested date has no publication but an earlier
   rate exists, the earlier rate is used and its date is clearly disclosed.
 - **SC-004**: In 100% of offline, invalid-input, empty-source, or damaged-saved-data test cases,
