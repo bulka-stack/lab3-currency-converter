@@ -5,8 +5,6 @@ from __future__ import annotations
 import queue
 import threading
 import tkinter as tk
-from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
 from tkinter import messagebox, ttk
 
 from currency_converter.conversion import format_amount, format_rate
@@ -16,6 +14,12 @@ from currency_converter.models import (
     ConversionResult,
 )
 from currency_converter.service import RateService, ServiceOutcome, ServiceStatus
+from currency_converter.validation import (
+    AmountError,
+    DateError,
+    parse_amount,
+    parse_date,
+)
 
 POLL_INTERVAL_MS = 50
 
@@ -32,6 +36,7 @@ class CurrencyConverterApp:
         self._closing = False
         self._after_id: str | None = None
         self._last_result: ConversionResult | None = None
+        self._amount_touched = False  # True after the user edits the amount field
 
         self.root.title("Конвертер валют Молдовы (НБМ)")
         self.root.resizable(False, False)
@@ -144,6 +149,18 @@ class CurrencyConverterApp:
         """Keep the Convert button state synchronised with required inputs."""
         for var in (self.amount_var, self.source_var, self.target_var):
             var.trace_add("write", lambda *_args: self._update_convert_button_state())
+        # Mark amount as touched when the user first interacts with it
+        self.amount_entry.bind("<FocusIn>", self._on_amount_focus_in)
+        self.amount_entry.bind("<FocusOut>", self._on_amount_focus_out)
+
+    def _on_amount_focus_in(self, _event: tk.Event) -> None:
+        """Mark the amount field as touched on first focus."""
+        self._amount_touched = True
+
+    def _on_amount_focus_out(self, _event: tk.Event) -> None:
+        """Show a validation message when the user leaves a touched-empty amount field."""
+        if self._amount_touched and not self.amount_var.get().strip():
+            self.status_var.set("Введите сумму для конвертации.")
 
     def _has_required_fields(self) -> bool:
         return bool(
@@ -191,29 +208,17 @@ class CurrencyConverterApp:
             self.target_var.set("")
 
     def _build_request(self) -> ConversionRequest | None:
-        raw_amount = self.amount_var.get().strip()
-        if not raw_amount:
-            self._clear_result()
-            self.status_var.set("Введите сумму для конвертации.")
-            return None
+        """Parse and validate form values into an immutable ConversionRequest.
 
-        if any(ch.isspace() for ch in raw_amount) or "_" in raw_amount:
+        Uses currency_converter.validation for amount and date parsing.
+        Returns None and sets a short Russian status message on any error.
+        """
+        amount_result = parse_amount(self.amount_var.get())
+        if isinstance(amount_result, AmountError):
             self._clear_result()
-            self.status_var.set("Введите корректную положительную сумму.")
+            self.status_var.set(amount_result.message)
             return None
-
-        normalized_amount = raw_amount.replace(",", ".")
-        try:
-            amount = Decimal(normalized_amount)
-        except InvalidOperation:
-            self._clear_result()
-            self.status_var.set("Введите корректную положительную сумму.")
-            return None
-
-        if not amount.is_finite() or amount <= 0:
-            self._clear_result()
-            self.status_var.set("Сумма должна быть больше нуля.")
-            return None
+        amount = amount_result.value
 
         source_currency = self.source_var.get().strip()
         target_currency = self.target_var.get().strip()
@@ -222,16 +227,12 @@ class CurrencyConverterApp:
             self.status_var.set("Выберите исходную и целевую валюты.")
             return None
 
-        raw_date = self.date_var.get().strip()
-        if not raw_date:
-            requested_date = date.today()
-        else:
-            try:
-                requested_date = datetime.strptime(raw_date, "%d.%m.%Y").date()
-            except ValueError:
-                self._clear_result()
-                self.status_var.set("Введите дату в формате ДД.ММ.ГГГГ.")
-                return None
+        date_result = parse_date(self.date_var.get())
+        if isinstance(date_result, DateError):
+            self._clear_result()
+            self.status_var.set(date_result.message)
+            return None
+        requested_date = date_result.value
 
         return ConversionRequest(
             amount=amount,

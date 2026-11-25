@@ -115,8 +115,8 @@ messages, today's-date default, and absence of invalid conversions.
 
 ### Implementation for User Story 3
 
-- [ ] T013 [P] [US3] Implement pure input parsing and validation in `currency_converter/validation.py`: amount must be a positive `Decimal`, accept comma or period as the decimal separator, reject thousands separators, parse dates as `DD.MM.YYYY`, map blank date to local today, and accept only 01.01.1994 through tomorrow.
-- [ ] T014 [US3] Integrate `currency_converter/validation.py` with `currency_converter/gui.py` so touched-empty, non-numeric, zero, negative, malformed, too-early, and too-late inputs show short Russian messages, invalid requests produce no result, and valid form state enables Convert.
+- [x] T013 [P] [US3] Implement pure input parsing and validation in `currency_converter/validation.py`: amount must be a positive `Decimal`, accept comma or period as the decimal separator, reject thousands separators, parse dates as `DD.MM.YYYY`, map blank date to local today, and accept only 01.01.1994 through tomorrow.
+- [x] T014 [US3] Integrate `currency_converter/validation.py` with `currency_converter/gui.py` so touched-empty, non-numeric, zero, negative, malformed, too-early, and too-late inputs show short Russian messages, invalid requests produce no result, and valid form state enables Convert.
 
 **Checkpoint**: All three stories are implemented; valid requests work and invalid input cannot
 produce a conversion.
