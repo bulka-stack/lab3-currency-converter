@@ -41,9 +41,9 @@ Every task follows `- [ ] T### [P?] [Story?] Description with exact file path`.
 **Purpose**: Require approved specifications before code work and establish the implementation
 branch and package skeleton.
 
-- [ ] T001 Verify that `specs/001-moldova-currency-converter/spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, and `tasks.md` are merged to `main` through a Pull Request; do not start source or test code before this gate.
-- [ ] T002 After T001, create the implementation-stage branch `implementation/001-moldova-currency-converter` from the updated `main` before editing `currency_converter/__init__.py` or `main.py`.
-- [ ] T003 After T002, create the application package marker in `currency_converter/__init__.py` and the desktop entry point in `main.py` using only the Python standard library.
+- [x] T001 Verify that `specs/001-moldova-currency-converter/spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, and `tasks.md` are merged to `main` through a Pull Request; do not start source or test code before this gate.
+- [x] T002 After T001, create the implementation-stage branch `implementation/001-moldova-currency-converter` from the updated `main` before editing `currency_converter/__init__.py` or `main.py`.
+- [x] T003 After T002, create the application package marker in `currency_converter/__init__.py` and the desktop entry point in `main.py` using only the Python standard library.
 
 ---
 
@@ -54,7 +54,7 @@ and GUI layers.
 
 **Blocking**: Complete this phase before starting any user-story implementation.
 
-- [ ] T004 Define the shared records in `currency_converter/models.py`: a quote has a unique alphabetic `code`, text `numeric_code` preserving leading zeroes, source `name`, and positive `Decimal` `nominal` and `value_mdl`; a rate set contains one actual date and its usable quotes; a request amount is a positive `Decimal`; and a conversion result may have no rate set for the no-rate identity case.
+- [x] T004 Define the shared records in `currency_converter/models.py`: a quote has a unique alphabetic `code`, text `numeric_code` preserving leading zeroes, source `name`, and positive `Decimal` `nominal` and `value_mdl`; a rate set contains one actual date and its usable quotes; a request amount is a positive `Decimal`; and a conversion result may have no rate set for the no-rate identity case.
 
 **Checkpoint**: Shared data shapes and constraints are ready; user-story code can begin.
 
